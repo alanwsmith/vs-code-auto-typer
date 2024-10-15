@@ -4,125 +4,104 @@ import path from 'path'
 import os from 'os'
 import JSON5 from 'json5'
 
+interface ConfigOutput {
+  filePath: string
+  updates: ConfigUpdate[]
+}
+
+interface ConfigPause {
+  min: number
+  max: number
+}
+
+interface ConfigPauseDict {
+  [key: string]: ConfigPause
+}
 
 interface ConfigRoot {
   outputs: ConfigOutput[]
   settings: ConfigSettings
 }
 
-interface ConfigOutput {}
-
-interface ConfigSettings{
-	pauses: ConfigPauseDict
+interface ConfigSettings {
+  pauses: ConfigPauseDict
 }
 
-interface ConfigPauseDict {
-	[key: string]: ConfigPause
+interface ConfigUpdate {
+  action: string
+  params: string[]
 }
 
-interface ConfigPause {
-	min: number
-	max: number
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function loadConfig(path: string): ConfigRoot {
+  const data = fs.readFileSync(path, 'utf8')
+  const config: ConfigRoot = JSON5.parse(data)
+  return config
+}
+
+function randomNumBetween(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+async function doOutput(output: ConfigOutput, settings: ConfigSettings) {
+  ////////////////////////////////////////////////////////
+  // TODO: Make this work so it either opens the
+  // existing file or creates a new one in the
+  // desired location
+  // let uri = vscode.Uri.file(output.filePath);
+  // if (!uri) {
+  // 	vscode.Uri.parse(`untitled:${output.filePath}`);
+  // }
+  // Doing this in the mean time:
+  const uri = vscode.Uri.parse(`untitled:${output.filePath}`)
+  ////////////////////////////////////////////////////////
+  const doc = await vscode.workspace.openTextDocument(uri)
+  await vscode.window.showTextDocument(doc, { preview: false })
+  for (let u = 0; u < output.updates.length; u++) {
+    await doUpdate(output.updates[u], settings)
+  }
+
+  // const editor = await vscode.window.activeTextEditor;
+  // if (editor) {
+  // 	await output.updates.forEach(async (update) => {
+  // 		await doUpdate(editor, update);
+  // 	});
+  // }
+}
+
+async function doPause(kind: string, settings: ConfigSettings) {
+	const delay = Math.floor(Math.random() * (settings.pauses[kind].max - settings.pauses[kind].min + 1) + settings.pauses[kind].min)
+	return new Promise((resolve) => setTimeout(resolve, delay))
 }
 
 
-
-
-
-
-
-
-// interface ConfigOptions {
-//   outputs: ConfigOutput[]
-//   settings: ConfigSettings
-// }
-
-// interface ConfigOutput {
-//   filePath: string
-//   updates: ConfigUpdate[]
-// }
-
-// interface ConfigUpdate {
-//   action: string
-//   values: string[]
-// }
-
-// interface ConfigSettings {
-//   minCharacterPause: number
-//   maxCharacterPause: number
-//   smallPause: number
-//   mediumPause: number
-//   largePause: number
-//   editPause: number
-// }
-
-// async function sleep(ms: number) {
-//   return new Promise((resolve) => setTimeout(resolve, ms))
-// }
-
-function loadConfig(configPath: string): ConfigRoot {
-  const configData = fs.readFileSync(configPath, 'utf8')
-  const configJson:ConfigRoot = JSON5.parse(configData)
-  console.log(configJson.settings.pauses.character.min)
-  console.log(configJson);
-  return configJson;
-}
-
-// function randomNumBetween(min: number, max: number): number {
-//   return Math.floor(Math.random() * (max - min + 1) + min)
-// }
-
-// async function doOutput(output: ConfigOutput, settings: ConfigSettings) {
-//   ////////////////////////////////////////////////////////
-//   // TODO: Make this work so it either opens the
-//   // existing file or creates a new one in the
-//   // desired location
-//   // let uri = vscode.Uri.file(output.filePath);
-//   // if (!uri) {
-//   // 	vscode.Uri.parse(`untitled:${output.filePath}`);
-//   // }
-//   // Doing this in the mean time:
-//   const uri = vscode.Uri.parse(`untitled:${output.filePath}`)
-//   ////////////////////////////////////////////////////////
-//   const doc = await vscode.workspace.openTextDocument(uri)
-//   await vscode.window.showTextDocument(doc, { preview: false })
-//   for (let u = 0; u < output.updates.length; u++) {
-//     await doUpdate(output.updates[u], settings)
-//   }
-
-//   // const editor = await vscode.window.activeTextEditor;
-//   // if (editor) {
-//   // 	await output.updates.forEach(async (update) => {
-//   // 		await doUpdate(editor, update);
-//   // 	});
-//   // }
-// }
-
-// async function doUpdate(update: ConfigUpdate, settings: ConfigSettings) {
-//   if (update.action === 'write') {
-//     const characters = await update.values.join('').split('')
-//     for (let i = 0; i < characters.length; i++) {
-//       await writeCharacter(characters[i], settings)
-//     }
-//   } else if (update.action === 'editPause') {
-//     await sleep(settings.editPause)
+async function doUpdate(update: ConfigUpdate, settings: ConfigSettings) {
+  if (update.action === 'write') {
+    const characters = await update.params.join('').split('')
+    for (let i = 0; i < characters.length; i++) {
+      await writeCharacter(characters[i], settings)
+    }
+  } else if (update.action === 'pause') {
+    await doPause(update.params[0], settings)
 //   } else if (update.action === 'largePause') {
 //     await sleep(randomNumBetween(settings.characterPause.min, settings.characterPause.max))
-//   }
-// }
+  }
+}
 
-// async function writeCharacter(character: string, settings: ConfigSettings) {
-//   const editor = await vscode.window.activeTextEditor
-//   if (editor) {
-//     await editor.edit(async (eb) => {
-//       await eb.replace(editor.selection, character)
-//     })
-//     await sleep(settings.minCharacterPause)
-//   }
-// }
+async function writeCharacter(character: string, settings: ConfigSettings) {
+  const editor = await vscode.window.activeTextEditor
+  if (editor) {
+    await editor.edit(async (eb) => {
+      await eb.replace(editor.selection, character)
+    })
+    await doPause('character', settings)
+  }
+}
 
 export function activate(context: vscode.ExtensionContext) {
-
   const cmd: string = 'vs-code-auto-typer.autoTypeScript'
   const configPath = path.join(os.homedir(), 'Desktop', 'auto-type.json')
   const disposable = vscode.commands.registerCommand(cmd, async () => {
@@ -134,8 +113,8 @@ export function activate(context: vscode.ExtensionContext) {
     // be an issue with trying to edit a file a second
     // time due to the `untitled:` uri schema. That
     // needs to be looked at.
-    // const output = config.outputs[0]
-    // await doOutput(output, config.settings)
+    const output = config.outputs[0]
+    await doOutput(output, config.settings)
 
     // console.log(config);
 
