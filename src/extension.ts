@@ -42,9 +42,9 @@ function loadConfig(path: string): ConfigRoot {
   return config
 }
 
-function randomNumBetween(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1) + min)
-}
+// function randomNumBetween(min: number, max: number): number {
+//   return Math.floor(Math.random() * (max - min + 1) + min)
+// }
 
 async function doOutput(output: ConfigOutput, settings: ConfigSettings) {
   ////////////////////////////////////////////////////////
@@ -103,7 +103,7 @@ async function writeCharacter(character: string, settings: ConfigSettings) {
 
 export function activate(context: vscode.ExtensionContext) {
   const cmd: string = 'vs-code-auto-typer.autoTypeScript'
-  const configPath = path.join(os.homedir(), 'Desktop', 'auto-type.json')
+  const configPath = path.join(os.homedir(), 'Desktop', 'auto-type.json5')
   const disposable = vscode.commands.registerCommand(cmd, async () => {
     const config: ConfigRoot = loadConfig(configPath)
     // The script only handles one output for now so
