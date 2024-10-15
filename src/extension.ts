@@ -24,17 +24,20 @@ interface ConfigRoot {
 }
 
 interface ConfigSettings {
+  debug: boolean
   pauses: ConfigPauseDict
 }
 
 interface ConfigUpdate {
   action: string
-  params: string[]
+  kind?: string
+  count?: number
+  text?: string
 }
 
-async function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
+// async function sleep(ms: number) {
+//   return new Promise((resolve) => setTimeout(resolve, ms))
+// }
 
 function loadConfig(path: string): ConfigRoot {
   const data = fs.readFileSync(path, 'utf8')
@@ -73,21 +76,36 @@ async function doOutput(output: ConfigOutput, settings: ConfigSettings) {
 }
 
 async function doPause(kind: string, settings: ConfigSettings) {
-	const delay = Math.floor(Math.random() * (settings.pauses[kind].max - settings.pauses[kind].min + 1) + settings.pauses[kind].min)
-	return new Promise((resolve) => setTimeout(resolve, delay))
+  if (settings.debug === true) {
+    return new Promise((resolve) => setTimeout(resolve, 0))
+  } else {
+    const delay = Math.floor(
+      Math.random() *
+        (settings.pauses[kind].max - settings.pauses[kind].min + 1) +
+        settings.pauses[kind].min
+    )
+    return new Promise((resolve) => setTimeout(resolve, delay))
+  }
 }
 
-
 async function doUpdate(update: ConfigUpdate, settings: ConfigSettings) {
-  if (update.action === 'write') {
-    const characters = await update.params.join('').split('')
+  if (update.action === 'write' && update.text) {
+    const characters = await update.text.split('')
     for (let i = 0; i < characters.length; i++) {
       await writeCharacter(characters[i], settings)
     }
-  } else if (update.action === 'pause') {
-    await doPause(update.params[0], settings)
-//   } else if (update.action === 'largePause') {
-//     await sleep(randomNumBetween(settings.characterPause.min, settings.characterPause.max))
+  } else if (update.action === 'pause' && update.kind) {
+    await doPause(update.kind, settings)
+  } else if (update.action === 'tab' && update.count) {
+    for (let i = 0; i < update.count; i++) {
+      await writeCharacter('\t', settings)
+    }
+	await doPause('tab', settings)
+  } else if (update.action === 'newline' && update.count) {
+    for (let i = 0; i < update.count; i++) {
+      await writeCharacter('\n', settings)
+    }
+	await doPause('newline', settings)
   }
 }
 
