@@ -1,0 +1,82 @@
+{
+  "settings": {
+    "debug": false,
+    "pauses": {
+      "character": {
+        "min": 20,
+        "max": 45
+      },
+      "edit": {
+        "min": 1000,
+        "max": 1000
+      },
+      "long": {
+        "min": 1900,
+        "max": 2200
+      },
+      "newline": {
+        "min": 700,
+        "max": 800
+      },
+      "short": {
+        "min": 1000,
+        "max": 1200
+      },
+      "tab": {
+        "min": 60,
+        "max": 80
+      }
+    }
+  },
+  "outputs": [
+    {
+      "filePath": "/Users/alan/Desktop/example.py",
+      "updates": [
+        {
+          "action": "pause",
+          "kind": "edit"
+        },
+        {
+          "action": "write",
+          "text": "def ping():"
+        },
+        {
+          "action": "newline",
+          "count": 1
+        },
+        {
+          "action": "tab",
+          "count": 1
+        },
+        {
+          "action": "write",
+          "text": 'print("this is ping")'
+        },
+        {
+          "action": "newline",
+          "count": 2
+        },
+        {
+          "action": "pause",
+          "kind": "short"
+        },
+        {
+          "action": "write",
+          "text": "def pong():"
+        },
+        {
+          "action": "newline",
+          "count": 1
+        },
+        {
+          "action": "tab",
+          "count": 1
+        },
+        {
+          "action": "write",
+          "text": 'print("this is pong")'
+        },
+      ]
+    }
+  ]
+}
